@@ -1,0 +1,103 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <title>HMAC SHA-256 (C# Compatible)</title>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      max-width: 720px;
+      margin: 32px auto;
+      padding: 24px;
+      background: #f7f7f8;
+      border-radius: 12px;
+    }
+    label {
+      display: block;
+      margin-top: 12px;
+      font-weight: bold;
+    }
+    textarea, input {
+      width: 100%;
+      padding: 10px;
+      border: 1px solid #ccc;
+      border-radius: 8px;
+      margin-top: 5px;
+    }
+    button {
+      margin-top: 16px;
+      padding: 10px 14px;
+      border: 0;
+      border-radius: 8px;
+      background: #16a34a;
+      color: #fff;
+      cursor: pointer;
+    }
+    button:hover {
+      background: #15803d;
+    }
+    .out {
+      margin-top: 16px;
+      background: #fff;
+      border: 1px solid #ddd;
+      border-radius: 8px;
+      padding: 10px;
+      word-break: break-all;
+    }
+    small {
+      color: #666;
+    }
+  </style>
+</head>
+<body>
+  <h2>HMAC SHA-256</h2>
+
+  <label for="body">Raw Body / Query</label>
+  <textarea id="body" rows="6">{"name":"test","value":123}</textarea>
+
+  <label for="secretKey">Secret Key:</label>
+  <input id="secretKey" value="RY_o(d91zZn4jHY" />
+
+  <button id="btn">Generate Signature</button>
+
+  <div class="out" id="sig">Signature will appear here…</div>
+  <div class="out" id="preview"><small>ข้อความที่ถูก Normalize ก่อนเข้ารหัส</small></div>
+
+  <script>
+    // ฟังก์ชัน HMAC SHA-256 -> Base64
+    async function hmacBase64(message, secret) {
+      const enc = new TextEncoder();
+      const key = await crypto.subtle.importKey(
+        'raw',
+        enc.encode(secret),
+        { name: 'HMAC', hash: 'SHA-256' },
+        false,
+        ['sign']
+      );
+      const sig = await crypto.subtle.sign('HMAC', key, enc.encode(message));
+      return btoa(String.fromCharCode(...new Uint8Array(sig)));
+    }
+
+    function normalizeMessage(rawBody) {
+      let content = rawBody;
+      content = content.replaceAll('"', "'");
+      content = content.replace(/\r?\n/g, "\r\n");
+      return content;
+    }
+
+    // ฟังก์ชัน Generate Signature
+    document.getElementById('btn').addEventListener('click', async () => {
+      const rawBody = document.getElementById('body').value;
+      const secretKey = document.getElementById('secretKey').value.trim();
+
+      // Normalize ให้เหมือนฝั่ง C#
+      const normalizedMessage = normalizeMessage(rawBody);
+      document.getElementById('preview').textContent = normalizedMessage;
+
+      // สร้างลายเซ็น
+      const signature = await hmacBase64(normalizedMessage, secretKey);
+      document.getElementById('sig').textContent = signature;
+    });
+  </script>
+</body>
+</html>
